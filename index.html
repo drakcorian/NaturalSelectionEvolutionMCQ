@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Evolution Quiz</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,system-ui,sans-serif;-webkit-tap-highlight-color:transparent}
+:root{color-scheme:light}
+html,body{min-height:100%}
+body{background:#26A079;min-height:100vh;display:flex;flex-direction:column;color:#222}
+
+#bar{display:flex;align-items:center;gap:10px;padding:10px 14px;background:rgba(0,0,0,0.14);flex-shrink:0}
+#prog-wrap{flex:1;height:6px;background:rgba(255,255,255,0.3);border-radius:3px;overflow:hidden}
+#prog{height:100%;width:0%;background:#fff;border-radius:3px;transition:width .3s}
+#lv{background:rgba(0,0,0,0.2);color:#fff;font-size:12px;font-weight:700;padding:4px 10px;border-radius:20px;white-space:nowrap}
+#teacher-toggle{background:rgba(0,0,0,0.2);color:#fff;border:none;border-radius:6px;padding:5px 10px;font-size:12px;font-weight:700;cursor:pointer}
+
+#quiz-view{flex:1;display:flex;flex-direction:column}
+#retry-bar{background:#c0392b;color:#fff;font-size:13px;font-weight:600;text-align:center;padding:6px;display:none}
+#stage{flex:1;padding:12px;display:flex;justify-content:center;align-items:flex-start}
+#card{background:#fff;border-radius:16px;width:100%;max-width:520px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.18)}
+
+#qhead{padding:22px 18px 14px;text-align:center}
+#badge{display:inline-block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:3px 10px;border-radius:20px;margin-bottom:8px}
+.b-gen{background:#E8F0FE;color:#1F4E9C}
+.b-ped{background:#FDEBF3;color:#9B2C5E}
+.b-ns{background:#E1F5EE;color:#0F6E56}
+.b-evo{background:#FEF3E2;color:#854F0B}
+.b-adapt{background:#EEEDFE;color:#3C3489}
+.b-term{background:#F1F1F1;color:#444}
+#qtext{font-size:21px;font-weight:700;color:#111;line-height:1.3}
+#qtext.mid{font-size:17px}
+#qtext.long{font-size:15px;font-weight:600}
+#qsub{font-size:12px;color:#999;margin-top:6px}
+
+#grid{display:grid;grid-template-columns:1fr 1fr;gap:2px;background:#d0d0d0;border-top:2px solid #d0d0d0}
+.opt{background:#f0f0f0;padding:16px 12px;display:flex;align-items:flex-start;gap:8px;min-height:90px;cursor:pointer}
+.opt:active{background:#e0e0e0}
+.opt.ok{background:#d4edda}.opt.bad{background:#f8d7da}.opt.show{background:#d4edda}
+.num{width:20px;height:20px;border-radius:4px;background:#ccc;color:#555;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.opt.ok .num,.opt.show .num{background:#28a745;color:#fff}
+.opt.bad .num{background:#dc3545;color:#fff}
+.txt{font-size:14px;color:#333;line-height:1.35;min-width:0;overflow-wrap:anywhere}
+.opt.ok .txt,.opt.show .txt{color:#155724;font-weight:600}
+.opt.bad .txt{color:#721c24}
+
+#frow{padding:10px 14px;display:flex;align-items:flex-start;justify-content:space-between;min-height:48px;border-top:1px solid #eee;gap:8px}
+#fb-wrap{flex:1;display:flex;flex-direction:column;gap:4px;min-width:0}
+#fb{font-size:13px;font-weight:600}
+#fnote{font-size:13px;color:#555;line-height:1.5;display:none;padding-top:2px}
+.fbok{color:#155724}.fbbad{color:#721c24}
+#nxt{background:#1E8A68;color:#fff;border:none;border-radius:8px;padding:10px 18px;font-size:14px;font-weight:700;cursor:pointer;display:none;-webkit-appearance:none;flex-shrink:0;align-self:center}
+
+#stats{display:flex;border-top:1px solid #eee}
+.st{flex:1;text-align:center;padding:9px 2px;border-right:1px solid #eee}
+.st:last-child{border-right:none}
+.sv{font-size:17px;font-weight:700;color:#333}
+.sl{font-size:10px;color:#999;margin-top:2px}
+
+#level-summary,#done{display:none;flex-direction:column;align-items:center;padding:28px 18px;text-align:center}
+#level-summary h2,#done h2{font-size:22px;font-weight:700;color:#222;margin-bottom:6px}
+#done p{font-size:13px;color:#777;margin-bottom:18px}
+.dg{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%;margin-bottom:20px}
+.dc{background:#f5f5f5;border-radius:10px;padding:12px}
+.dv{font-size:22px;font-weight:700;color:#333}
+.dl{font-size:11px;color:#999;margin-top:2px}
+.dbtn{display:block;width:100%;border:none;border-radius:11px;padding:14px;font-size:15px;font-weight:700;cursor:pointer;margin-bottom:8px;-webkit-appearance:none}
+.dbtn:last-child{margin-bottom:0}
+.teal{background:#1E8A68;color:#fff}
+.green{background:#28a745;color:#fff}
+.lv-badge{font-size:48px;margin-bottom:8px}
+.lv-tag{display:inline-block;background:#1E8A68;color:#fff;font-size:13px;font-weight:700;padding:4px 16px;border-radius:20px;margin-bottom:12px}
+.unlock-msg{font-size:13px;color:#155724;font-weight:600;margin-bottom:16px;padding:10px 14px;background:#d4edda;border-radius:10px;width:100%}
+
+#levels{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;padding:0 12px 14px}
+.lvjump{background:rgba(255,255,255,0.18);color:#fff;border:none;border-radius:20px;padding:5px 11px;font-size:12px;font-weight:700;cursor:pointer}
+.lvjump.on{background:#fff;color:#1E8A68}
+
+button:focus-visible,.opt:focus-visible{outline:3px solid #0b4a37;outline-offset:2px}
+
+/* teacher view */
+#teacher-view{display:none;flex:1;flex-direction:column;background:#f7f7f7}
+#tv-toolbar{background:#fff;border-bottom:1px solid #eee;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-shrink:0;flex-wrap:wrap}
+#tv-toolbar h2{font-size:16px;font-weight:700;color:#222}
+#tv-toolbar-right{display:flex;gap:8px;flex-wrap:wrap}
+.tv-btn{border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;-webkit-appearance:none}
+.tv-btn.green{background:#28a745;color:#fff}
+.tv-btn.gray{background:#eee;color:#555}
+#tv-scroll{flex:1;overflow-y:auto;padding:12px 14px}
+.qcard{background:#fff;border-radius:12px;margin-bottom:12px;overflow:hidden;border:1px solid #e8e8e8}
+.qcard-header{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#f9f9f9;border-bottom:1px solid #eee;cursor:pointer;gap:8px}
+.qcard-num{font-size:11px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:.04em;flex-shrink:0}
+.qcard-preview{font-size:13px;color:#555;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.qcard-lv{font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:#E1F5EE;color:#0F6E56;flex-shrink:0}
+.qcard-del{background:#f8d7da;border:none;border-radius:6px;padding:5px 10px;font-size:12px;font-weight:700;color:#721c24;cursor:pointer;flex-shrink:0}
+.qcard-body{padding:12px 14px;display:none;flex-direction:column;gap:10px}
+.qcard-body.open{display:flex}
+.field-label{font-size:11px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px}
+.field-input{width:100%;padding:9px 11px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:14px;background:#fff;color:#222;outline:none;-webkit-appearance:none;font-family:inherit}
+.field-input:focus{border-color:#26A079}
+textarea.field-input{resize:vertical;min-height:60px;line-height:1.4}
+.pills{display:flex;gap:6px;flex-wrap:wrap}
+.pill{border:1.5px solid #e0e0e0;border-radius:20px;padding:5px 12px;font-size:12px;font-weight:600;color:#888;cursor:pointer;background:#fff}
+.pill.active{border-color:#26A079;background:#E1F5EE;color:#0F6E56}
+.opts-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.hint{font-size:12px;color:#888}
+#add-btn{display:block;width:100%;background:#fff;border:2px dashed #26A079;border-radius:10px;padding:13px;font-size:14px;font-weight:700;color:#1E8A68;cursor:pointer;text-align:center;margin-top:4px;margin-bottom:16px}
+</style>
+</head>
+<body>
+
+<div id="bar">
+  <div id="prog-wrap"><div id="prog"></div></div>
+  <div id="lv">Level 1</div>
+  <button id="teacher-toggle">✏ Teacher</button>
+</div>
+
+<div id="quiz-view">
+  <div id="retry-bar">🔁 Retesting cards you missed</div>
+  <div id="stage">
+    <div id="card">
+      <div id="qhead">
+        <div id="badge" class="b-gen">loading</div>
+        <div id="qtext">Getting ready…</div>
+        <div id="qsub"></div>
+      </div>
+      <div id="grid">
+        <div class="opt" id="o0" tabindex="0"><div class="num">1</div><div class="txt"></div></div>
+        <div class="opt" id="o1" tabindex="0"><div class="num">2</div><div class="txt"></div></div>
+        <div class="opt" id="o2" tabindex="0"><div class="num">3</div><div class="txt"></div></div>
+        <div class="opt" id="o3" tabindex="0"><div class="num">4</div><div class="txt"></div></div>
+      </div>
+      <div id="frow">
+        <div id="fb-wrap">
+          <div id="fb"></div>
+          <div id="fnote"></div>
+        </div>
+        <button id="nxt">Next →</button>
+      </div>
+      <div id="stats">
+        <div class="st"><div class="sv" id="sc">0</div><div class="sl">correct</div></div>
+        <div class="st"><div class="sv" id="sr">0</div><div class="sl">retry</div></div>
+        <div class="st"><div class="sv" id="ss">0</div><div class="sl">streak 🔥</div></div>
+        <div class="st"><div class="sv" id="sa">—</div><div class="sl">accuracy</div></div>
+      </div>
+
+      <div id="level-summary">
+        <div class="lv-badge" id="ls-emoji">⭐</div>
+        <div class="lv-tag" id="ls-tag">Level 1 Complete!</div>
+        <h2 id="ls-title">Nice work!</h2>
+        <div class="dg">
+          <div class="dc"><div class="dv" id="ls-c">0</div><div class="dl">correct</div></div>
+          <div class="dc"><div class="dv" id="ls-w">0</div><div class="dl">wrong</div></div>
+          <div class="dc"><div class="dv" id="ls-acc">—</div><div class="dl">accuracy</div></div>
+          <div class="dc"><div class="dv" id="ls-xp">0</div><div class="dl">XP earned</div></div>
+        </div>
+        <div class="unlock-msg" id="ls-unlock"></div>
+        <button class="dbtn green" id="ls-next">Next Level →</button>
+        <button class="dbtn teal" id="ls-retry">Retry this level</button>
+      </div>
+
+      <div id="done">
+        <div style="font-size:44px;margin-bottom:8px">🏆</div>
+        <h2>All levels complete!</h2>
+        <p id="dsub"></p>
+        <div class="dg">
+          <div class="dc"><div class="dv" id="dc1">0</div><div class="dl">correct</div></div>
+          <div class="dc"><div class="dv" id="dc2">0</div><div class="dl">wrong</div></div>
+          <div class="dc"><div class="dv" id="dc3">—</div><div class="dl">accuracy</div></div>
+          <div class="dc"><div class="dv" id="dc4">0</div><div class="dl">XP earned</div></div>
+        </div>
+        <button class="dbtn teal" id="d-again">Play again from Level 1</button>
+      </div>
+    </div>
+  </div>
+  <div id="levels"></div>
+</div>
+
+<div id="teacher-view">
+  <div id="tv-toolbar">
+    <h2>✏ Question Editor</h2>
+    <div id="tv-toolbar-right">
+      <button class="tv-btn gray" id="tv-reset">Restore defaults</button>
+      <button class="tv-btn gray" id="tv-cancel">Cancel</button>
+      <button class="tv-btn green" id="tv-save">Save &amp; Play</button>
+    </div>
+  </div>
+  <div id="tv-scroll">
+    <div id="qlist"></div>
+    <button id="add-btn">+ Add question</button>
+  </div>
+</div>
+
+<script>
+// Year 10 Biology — Natural Selection & Evolution
+// Levels: 1 Genetics basics · 2 Pedigrees & karyotypes · 3 Natural selection & speciation
+//         4 Evidence & human evolution · 5 Adaptations · 6 Terminology (Sem 2 terminology sheet)
+// Types (badge colour): gen, ped, ns, evo, adapt, term
+// "term" cards flip: sometimes show the term (pick the definition), sometimes the definition (pick the term).
+
+var LEVEL_INFO=[
+  null,
+  {emoji:"🧬",title:"Genetics Basics",unlock:"Level 2 unlocked: Pedigrees & karyotypes!"},
+  {emoji:"🌳",title:"Pedigrees & Karyotypes",unlock:"Level 3 unlocked: Natural selection & speciation!"},
+  {emoji:"🐦",title:"Natural Selection & Speciation",unlock:"Level 4 unlocked: Evidence & human evolution!"},
+  {emoji:"🦴",title:"Evidence & Human Evolution",unlock:"Level 5 unlocked: Adaptations!"},
+  {emoji:"🐧",title:"Adaptations",unlock:"Level 6 unlocked: Terminology!"},
+  {emoji:"📖",title:"Terminology",unlock:"You've completed all levels!"}
+];
+var MAX_LEVEL=6;
+
+var DEFAULT_DATA=[
+  // ── LEVEL 1: Genetics basics ──
+  {lv:1,t:"gen",q:"Different versions of the same gene are called…",a:"Alleles",x:["Chromosomes","Genotypes","Mutagens"],note:"Alleles are different forms of one gene, e.g. B (brown eyes) and b (blue eyes)."},
+  {lv:1,t:"gen",q:"Which genotype is homozygous recessive?",a:"tt",x:["TT","Tt","T"],note:"Homozygous = two of the same allele. Recessive = lowercase. TT is homozygous dominant; Tt is heterozygous."},
+  {lv:1,t:"gen",q:"An observable characteristic, like eye colour or height, is called the…",a:"Phenotype",x:["Genotype","Allele","Karyotype"],note:"Phenotype = what you can see. Genotype = the alleles you have (e.g. Bb)."},
+  {lv:1,t:"gen",q:"Brown eyes (B) are dominant to blue eyes (b). What eye colour does a person with Bb have?",a:"Brown",x:["Blue","One brown eye and one blue eye","A blend of brown and blue"],note:"With complete dominance, one dominant allele is enough. The recessive b is hidden."},
+  {lv:1,t:"gen",q:"Tt × Tt. What fraction of the offspring are expected to be tt?",a:"1/4",x:["1/2","3/4","0"],note:"The Punnett square gives TT, Tt, Tt, tt. One box out of four is tt."},
+  {lv:1,t:"gen",q:"Tt × tt. What percentage of offspring are expected to show the dominant trait?",a:"50%",x:["25%","75%","100%"],note:"The Punnett square gives Tt, Tt, tt, tt. Two out of four show the dominant trait."},
+  {lv:1,t:"gen",q:"A cross gives 3 tall plants for every 1 short plant. What were the parents?",a:"Tt × Tt",x:["TT × tt","Tt × tt","TT × Tt"],note:"Only two heterozygous parents give the 3 : 1 ratio. TT × tt gives all tall; Tt × tt gives 1 : 1."},
+  {lv:1,t:"gen",q:"Red snapdragons × white snapdragons give all pink flowers. This is…",a:"Incomplete dominance",x:["Codominance","Complete dominance","Sex-linked inheritance"],note:"Incomplete dominance = a blend. Neither allele fully shows, so the heterozygote is in between (pink)."},
+  {lv:1,t:"gen",q:"Red cattle × white cattle give roan calves with red hairs and white hairs mixed together. This is…",a:"Codominance",x:["Incomplete dominance","Complete dominance","A mutation"],note:"Codominance = both alleles fully show side by side (separate red and white hairs), not blended."},
+  {lv:1,t:"gen",q:"Two pink snapdragons (incomplete dominance) are crossed. What offspring are expected?",a:"1 red : 2 pink : 1 white",x:["All pink","3 pink : 1 white","1 red : 1 white"],note:"RW × RW gives RR, RW, RW, WW: 1 red, 2 pink, 1 white."},
+
+  // ── LEVEL 2: Pedigrees, sex-linked inheritance & karyotypes ──
+  {lv:2,t:"ped",q:"In a pedigree, what does a shaded square mean?",a:"An affected male",x:["An affected female","An unaffected male","A carrier female"],note:"Squares are males, circles are females. Shaded = has the condition."},
+  {lv:2,t:"ped",q:"Two unaffected parents have an affected child. What does this tell you?",a:"The trait is recessive and both parents are carriers (Aa)",x:["The trait is dominant and both parents are carriers","The trait is dominant and one parent is affected","The father must be affected"],note:"Unaffected parents can only have an affected child if each passes on a hidden recessive allele."},
+  {lv:2,t:"ped",q:"Both parents have a recessive condition (aa). What is the chance their child has it?",a:"100%",x:["50%","25%","0%"],note:"aa × aa can only pass on a. This is the mistake in the practice test pedigree: individual 12 should be shaded."},
+  {lv:2,t:"ped",q:"A father has albinism (aa). His daughter is unaffected. What is her genotype?",a:"Aa (a carrier)",x:["AA","aa","Can't tell from this"],note:"She must have received an a from her father, but she's unaffected, so her other allele is A."},
+  {lv:2,t:"ped",q:"Why are males more likely than females to have red-green colour blindness?",a:"They have only one X chromosome, so one recessive allele is enough",x:["They inherit the allele from their father","The allele is on the Y chromosome","Males have two X chromosomes"],note:"The gene is on the X chromosome. Females (XX) need two copies of the recessive allele; males (XY) need only one."},
+  {lv:2,t:"ped",q:"Which parent decides whether a baby is biologically male or female?",a:"The father, because only he can pass on a Y chromosome",x:["The mother, because she passes on an X","Both parents equally","Neither, it depends on the environment"],note:"Eggs always carry X. Sperm carry X or Y, so the sperm decides. Each child has a 50% chance of each."},
+  {lv:2,t:"ped",q:"A karyotype is…",a:"A picture of a cell's chromosomes arranged in numbered pairs",x:["A diagram showing a family's inheritance","The sequence of bases in a DNA molecule","A list of every gene in the body"],note:"Chromosomes are stained, photographed during cell division, then sorted into pairs by size, shape and banding."},
+  {lv:2,t:"ped",q:"A karyotype has 47 chromosomes, with three copies of chromosome 21. This person has…",a:"Down syndrome (trisomy 21)",x:["Turner syndrome","A typical karyotype","A deletion mutation"],note:"Typical number is 46. An extra (third) chromosome 21 is called trisomy 21."},
+  {lv:2,t:"ped",q:"On a karyotype, how can you tell the person is biologically female?",a:"The sex chromosomes (pair 23) are XX",x:["The sex chromosomes are XY","There are 22 pairs of autosomes","There are 47 chromosomes"],note:"Everyone has 22 pairs of autosomes. The 23rd pair shows sex: XX female, XY male."},
+
+  // ── LEVEL 3: Natural selection & speciation ──
+  {lv:3,t:"ns",q:"Brand-new alleles enter a population through…",a:"Mutation",x:["Natural selection","Sexual reproduction","Isolation"],note:"Mutation is the only source of new alleles. Sexual reproduction reshuffles alleles that already exist."},
+  {lv:3,t:"ns",q:"Which of these is a mutagen?",a:"UV radiation from the sun",x:["Cancer","Sexual reproduction","Natural selection"],note:"Mutagens cause mutations: UV, radiation, some chemicals. Cancer can be a result of mutation, not a cause."},
+  {lv:3,t:"ns",q:"Which of these is a biological (biotic) selection pressure?",a:"Predators",x:["Temperature","Sunlight","Rainfall"],note:"Biotic = living: predators, disease, competition. Temperature, sunlight and rainfall are physical (abiotic)."},
+  {lv:3,t:"ns",q:"Light-coloured peppered moths became rare near polluted cities because…",a:"Birds spotted and ate them more easily on soot-darkened trees",x:["Pollution turned them dark","Soot poisoned the light moths","They flew away to cleaner forests"],note:"Bird predation was the selection pressure. Dark moths were already in the population and survived to reproduce more."},
+  {lv:3,t:"ns",q:"On an island where the main food is hard seeds, which finch beak is most likely to be selected for?",a:"Large, strong crushing beak",x:["Long, thin probing beak","Small grasping beak","Short, curved beak for catching insects"],note:"Big crushing beaks crack hard seeds, like the large ground finch. Thin probing beaks suit insects or cactus flowers."},
+  {lv:3,t:"ns",q:"Antibiotic-resistant bacteria become more common because…",a:"Resistant bacteria that were already present survive and reproduce",x:["Antibiotics cause the bacteria to mutate","The bacteria try to adapt to the antibiotic","Antibiotics make all bacteria stronger"],note:"Resistance mutations happen randomly before the antibiotic arrives. The antibiotic is the selection pressure."},
+  {lv:3,t:"ns",q:"Natural selection acts on ______, but it is ______ that evolve.",a:"Individuals; populations",x:["Populations; individuals","Species; individuals","Genes; individuals"],note:"Individuals survive or die, but they don't change. The population's characteristics change over generations."},
+  {lv:3,t:"ns",q:"What is the correct order of the three steps of speciation?",a:"Variation → isolation → selection",x:["Isolation → variation → selection","Selection → variation → isolation","Selection → isolation → variation"],note:"Variation exists, groups get isolated so they can't interbreed, then different selection pressures act on each group."},
+  {lv:3,t:"ns",q:"Galapagos tortoises with raised 'saddleback' shells live on dry islands because…",a:"The shell lets them stretch their necks up to reach tall cactus",x:["The shell keeps them cool in the heat","The shell protects them from predators","They chose to grow that shape"],note:"On dry islands food grows high, so long-necked saddlebacks survived and reproduced more. Low-food islands favoured domed shells."},
+  {lv:3,t:"ns",q:"The Grand Canyon split one squirrel population into two groups. This is an example of…",a:"Geographical isolation",x:["Reproductive isolation","Artificial selection","Convergent evolution"],note:"A physical barrier (canyon, ocean, mountain range) stops the groups interbreeding. That's geographical isolation."},
+  {lv:3,t:"ns",q:"Two populations have become separate species when they…",a:"Can no longer interbreed to produce fertile offspring",x:["Live in different places","Look very different from each other","Eat different foods"],note:"The test for a species is producing fertile offspring. Living apart or looking different isn't enough."},
+
+  // ── LEVEL 4: Evidence for evolution, patterns & human evolution ──
+  {lv:4,t:"evo",q:"Which pair are homologous structures?",a:"A human arm and a whale flipper",x:["A bird wing and a butterfly wing","A shark fin and a dolphin flipper","A bat wing and a bee wing"],note:"Homologous = same bone layout from a common ancestor, but used differently."},
+  {lv:4,t:"evo",q:"Which pair are analogous structures?",a:"A bird wing and a butterfly wing",x:["A human arm and a bat wing","A whale flipper and a cat's front leg","A human arm and a horse's front leg"],note:"Analogous = same job, built differently, no common ancestor. The other pairs share the same bones, so they're homologous."},
+  {lv:4,t:"evo",q:"Sharks and dolphins have similar streamlined bodies, but they aren't closely related. This is…",a:"Convergent evolution",x:["Divergent evolution","Artificial selection","A vestigial structure"],note:"Convergent = unrelated species evolve similar features because they face similar selection pressures (here, water)."},
+  {lv:4,t:"evo",q:"Darwin's finches evolved many different beak shapes from one ancestor. This is…",a:"Divergent evolution",x:["Convergent evolution","Artificial selection","Incomplete dominance"],note:"Divergent = one ancestor splits into different species with different features. Look for homologous structures."},
+  {lv:4,t:"evo",q:"Which of these is a vestigial structure in humans?",a:"Wisdom teeth",x:["Front teeth (incisors)","Kidneys","Kneecaps"],note:"Vestigial structures are left over from ancestors but no longer have a useful job. Others: the coccyx (tailbone), the appendix."},
+  {lv:4,t:"evo",q:"Early embryos of fish, chickens and humans all have gill slits and a tail. This suggests they…",a:"Share a common ancestor",x:["All live in water","Evolved from fish that are alive today","Copy features from their environment"],note:"That's comparative embryology: similar early development points to shared ancestry."},
+  {lv:4,t:"evo",q:"Species A's DNA is 98% the same as human DNA. Species B's is 85% the same. What does this suggest?",a:"Species A shares a more recent common ancestor with humans",x:["Species B is more closely related to humans","Humans evolved from species A","DNA can't show how species are related"],note:"The more similar the DNA (or protein) sequence, the more closely related the species."},
+  {lv:4,t:"evo",q:"Fossils found in deeper rock layers are usually…",a:"Older than fossils in the layers above",x:["Younger than fossils in the layers above","The same age as the layers above","More complex than fossils above"],note:"Rock layers build up over time, so deeper = older. The fossil record shows how organisms changed over time."},
+  {lv:4,t:"evo",q:"In humans, the foramen magnum (where the spinal cord enters the skull) is…",a:"Underneath the skull, so the head balances on top of the spine",x:["At the back of the skull, like in apes","On the side of the skull","Missing in humans"],note:"In apes it sits further back. Moving forward under the skull is an adaptation for walking upright (bipedalism)."},
+  {lv:4,t:"evo",q:"Compared with an ape's pelvis, the human pelvis is…",a:"Short, broad and bowl-shaped",x:["Long, narrow and upright","Exactly the same shape","Smaller and flatter, with no hip joint"],note:"The short, broad pelvis supports the organs and anchors walking muscles when standing upright."},
+
+  // ── LEVEL 5: Adaptations ──
+  {lv:5,t:"adapt",q:"Penguins have a thick layer of blubber. What type of adaptation is this?",a:"Structural",x:["Behavioural","Physiological","Artificial"],note:"Structural = a physical body feature. Behavioural = something it does. Physiological = an internal or chemical process."},
+  {lv:5,t:"adapt",q:"Wolves hunt in packs. What type of adaptation is this?",a:"Behavioural",x:["Structural","Physiological","Artificial"],note:"It's something the animal does, so it's behavioural."},
+  {lv:5,t:"adapt",q:"Antarctic ice fish make antifreeze proteins in their blood. What type of adaptation is this?",a:"Physiological",x:["Structural","Behavioural","Artificial"],note:"It's an internal chemical process, so it's physiological. Clownfish making protective mucus is another example."},
+  {lv:5,t:"adapt",q:"Which of these is a behavioural adaptation?",a:"A desert lizard hides under rocks in the midday heat",x:["A camel has long eyelashes to keep out sand","A kangaroo rat makes very concentrated urine","A cactus has spines instead of leaves"],note:"Hiding is something the lizard does. Eyelashes and spines are structural; concentrated urine is physiological."},
+  {lv:5,t:"adapt",q:"Aboriginal peoples' fire-stick farming (small, planned burns to manage land) is best described as…",a:"A behavioural (cultural) adaptation",x:["A structural adaptation","A physiological adaptation","Artificial selection"],note:"It's knowledge and practice passed on through culture, not a body feature or internal process."},
+
+  // ── LEVEL 6: Terminology (Sem 2 terminology sheet wording) ──
+  {lv:6,t:"term",q:"Mutation",a:"A permanent change in the DNA of an organism",x:[],note:""},
+  {lv:6,t:"term",q:"Mutagen",a:"An agent that causes a mutation",x:[],note:"E.g. UV light, radiation, some chemicals."},
+  {lv:6,t:"term",q:"Variation",a:"The differences that exist between individuals or populations of species",x:[],note:""},
+  {lv:6,t:"term",q:"Human Genome Project",a:"An international project that aims to identify all the human genes and determine the sequence of the base pairs that make up chromosomes",x:[],note:""},
+  {lv:6,t:"term",q:"Recombinant DNA technology",a:"Procedures used to produce DNA that has been modified by inserting DNA into a cell from a different organism",x:[],note:""},
+  {lv:6,t:"term",q:"Evolution",a:"Change in the characteristics of a species over many generations",x:[],note:""},
+  {lv:6,t:"term",q:"Natural selection",a:"The process in which an environmental factor acts on a population and results in some organisms having more offspring that survive to reproduce than others",x:[],note:""},
+  {lv:6,t:"term",q:"Adaptation",a:"A trait that helps an organism survive and reproduce in its environment",x:[],note:""},
+  {lv:6,t:"term",q:"Selective agent",a:"An environmental factor that acts on a population during natural selection",x:[],note:"Also called a selection pressure."},
+  {lv:6,t:"term",q:"Biodiversity",a:"The number and range of species that exist on Earth or in an ecosystem",x:[],note:""},
+  {lv:6,t:"term",q:"Artificial selection",a:"The process by which people choose to breed particular organisms with desirable features; also known as selective breeding",x:[],note:""},
+  {lv:6,t:"term",q:"Fossil",a:"Evidence of, or remains of, an organism that lived a long time ago",x:[],note:""},
+  {lv:6,t:"term",q:"Fossil record",a:"A list showing the classification of all the species on Earth that have been found as fossils",x:[],note:"This is the sheet's wording. In evidence-for-evolution answers, talk about fossils showing change over time."},
+  {lv:6,t:"term",q:"Species",a:"A group of similar individuals that can interbreed in natural conditions to produce fertile offspring",x:[],note:""},
+  {lv:6,t:"term",q:"Speciation",a:"The process by which one species splits into two or more separate species",x:[],note:""}
+];
+
+var STORE_KEY="evo-quiz-questions-v1";
+function copyData(src){return src.map(function(d){return JSON.parse(JSON.stringify(d));});}
+function loadData(){
+  try{var raw=localStorage.getItem(STORE_KEY);if(raw){var p=JSON.parse(raw);if(Array.isArray(p)&&p.length)return p;}}catch(e){}
+  return copyData(DEFAULT_DATA);
+}
+function saveData(){try{localStorage.setItem(STORE_KEY,JSON.stringify(DATA));}catch(e){}}
+var DATA=loadData();
+
+// ── game state ──
+var currentLevel=1;
+var deck=[],weak=[],cur=null,answered=false;
+var C=0,W=0,streak=0,lvXP=0;
+var totalC=0,totalW=0,totalXP=0;
+
+function shuf(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}return a;}
+function cardsForLevel(lv){return DATA.filter(function(d){return d.lv===lv;});}
+function $(id){return document.getElementById(id);}
+
+function startLevel(lv){
+  currentLevel=lv;
+  deck=shuf(cardsForLevel(lv).slice());
+  weak=[];C=0;W=0;streak=0;lvXP=0;
+  hideAll();
+  $("retry-bar").style.display="none";
+  updateBar();updateStats();renderJumps();
+  next();
+}
+
+function hideAll(){
+  ["qhead","grid","frow","stats","level-summary","done"].forEach(function(id){$(id).style.display="none";});
+}
+
+var BADGES={gen:["b-gen","genetics"],ped:["b-ped","pedigrees & karyotypes"],ns:["b-ns","natural selection"],evo:["b-evo","evolution"],adapt:["b-adapt","adaptations"],term:["b-term","terminology"]};
+var TERM_POOL_MIN=4;
+
+function next(){
+  answered=false;
+  $("nxt").style.display="none";
+  $("fb").textContent="";$("fb").className="";
+  $("fnote").style.display="none";$("fnote").textContent="";
+
+  if(!deck.length&&!weak.length){showLevelSummary();return;}
+  if(!deck.length){deck=shuf(weak.slice());weak=[];$("retry-bar").style.display="block";}
+
+  cur=deck.shift();updateProg();
+  var b=BADGES[cur.t]||["b-term","question"];
+  $("badge").className=b[0];$("badge").textContent=b[1];
+
+  var qt,qs,correct,dists;
+  if(cur.t==="term"){
+    var pool=DATA.filter(function(c){return c!==cur&&c.t==="term";});
+    var showTerm=Math.random()<0.5;
+    if(showTerm){qt=cur.q;qs="Which definition matches this term?";correct=cur.a;dists=shuf(pool.slice()).map(function(c){return c.a;});}
+    else{qt=cur.a;qs="Which term matches this definition?";correct=cur.q;dists=shuf(pool.slice()).map(function(c){return c.q;});}
+  } else {
+    qt=cur.q;qs="Choose the best answer";correct=cur.a;dists=shuf((cur.x||[]).filter(function(s){return s&&s.trim();}).slice());
+  }
+  dists=dists.filter(function(d){return d!==correct;}).slice(0,3);
+
+  var qel=$("qtext");qel.textContent=qt;
+  qel.className=qt.length>130?"long":(qt.length>70?"mid":"");
+  $("qsub").textContent=qs;
+  $("qhead").style.display="block";$("frow").style.display="flex";$("stats").style.display="flex";$("grid").style.display="grid";
+
+  var opts=shuf([correct].concat(dists));
+  for(var i=0;i<4;i++){
+    var el=$("o"+i);
+    el.className="opt";
+    el.style.display=opts[i]===undefined?"none":"flex";
+    el.querySelector(".txt").textContent=opts[i]||"";
+    el.dataset.val=opts[i]||"";
+  }
+  bindOpts(correct);
+}
+
+function showNote(){
+  if(cur.note&&cur.note.trim()){$("fnote").textContent=cur.note;$("fnote").style.display="block";}
+}
+
+function bindOpts(correct){
+  for(var i=0;i<4;i++){
+    (function(el){
+      var n=el.cloneNode(true);el.parentNode.replaceChild(n,el);
+      function handle(e){if(e.type==="touchend")e.preventDefault();pick(n,n.dataset.val,correct);}
+      n.addEventListener("touchend",handle,{passive:false});
+      n.addEventListener("click",handle);
+      n.addEventListener("keydown",function(e){if(e.key==="Enter"||e.key===" "){e.preventDefault();handle(e);}});
+    })($("o"+i));
+  }
+}
+
+function pick(el,chosen,correct){
+  if(answered)return;answered=true;
+  for(var i=0;i<4;i++){var t=$("o"+i);if(t.dataset.val===correct)t.classList.add("show");}
+  var fb=$("fb");
+  if(chosen===correct){
+    el.classList.add("ok");el.classList.remove("show");
+    C++;totalC++;streak++;
+    var gain=15+(streak>=3?5:0);lvXP+=gain;totalXP+=gain;
+    fb.textContent=streak>=3?"✓ "+streak+" streak! +"+gain+" XP":"✓ Correct!";fb.className="fbok";
+  } else {
+    el.classList.add("bad");W++;totalW++;streak=0;weak.push(cur);
+    fb.textContent="✗ Answer: "+correct;fb.className="fbbad";
+  }
+  showNote();updateStats();
+  $("nxt").style.display="block";
+}
+
+function updateBar(){$("lv").textContent="Level "+currentLevel+" / "+MAX_LEVEL;}
+function updateStats(){
+  $("sc").textContent=C;$("sr").textContent=weak.length;$("ss").textContent=streak;
+  var tot=C+W;$("sa").textContent=tot?Math.round(C/tot*100)+"%":"—";
+}
+function updateProg(){
+  var total=C+W+deck.length+weak.length+1;
+  $("prog").style.width=Math.round((C+W)/total*100)+"%";
+}
+
+function renderJumps(){
+  var h=$("levels");h.innerHTML="";
+  for(var n=1;n<=MAX_LEVEL;n++){(function(n){
+    var b=document.createElement("button");b.className="lvjump"+(n===currentLevel?" on":"");
+    b.textContent=LEVEL_INFO[n].emoji+" "+n;b.title=LEVEL_INFO[n].title;b.setAttribute("aria-label","Jump to level "+n+": "+LEVEL_INFO[n].title);
+    b.addEventListener("click",function(){startLevel(n);});
+    h.appendChild(b);
+  })(n);}
+}
+
+function showLevelSummary(){
+  hideAll();$("retry-bar").style.display="none";
+  var info=LEVEL_INFO[currentLevel],tot=C+W;
+  $("ls-emoji").textContent=info.emoji;
+  $("ls-tag").textContent="Level "+currentLevel+" Complete!";
+  $("ls-title").textContent=info.title;
+  $("ls-c").textContent=C;$("ls-w").textContent=W;
+  $("ls-acc").textContent=tot?Math.round(C/tot*100)+"%":"—";
+  $("ls-xp").textContent=lvXP;
+  $("ls-unlock").textContent=info.unlock;
+  $("ls-next").textContent=currentLevel>=MAX_LEVEL?"See final results 🏆":"Start Level "+(currentLevel+1)+" →";
+  $("prog").style.width="100%";
+  $("level-summary").style.display="flex";
+}
+
+function showFinalDone(){
+  hideAll();$("done").style.display="flex";
+  var tot=totalC+totalW;
+  $("dc1").textContent=totalC;$("dc2").textContent=totalW;
+  $("dc3").textContent=tot?Math.round(totalC/tot*100)+"%":"—";
+  $("dc4").textContent=totalXP;
+  $("dsub").textContent="All "+MAX_LEVEL+" levels cleared!";
+  $("prog").style.width="100%";
+}
+
+function wire(id,fn){
+  var el=$(id);if(!el)return;
+  el.addEventListener("touchend",function(e){e.preventDefault();fn();},{passive:false});
+  el.addEventListener("click",fn);
+}
+
+wire("nxt",next);
+wire("ls-next",function(){if(currentLevel>=MAX_LEVEL)showFinalDone();else startLevel(currentLevel+1);});
+wire("ls-retry",function(){startLevel(currentLevel);});
+wire("d-again",function(){totalC=0;totalW=0;totalXP=0;startLevel(1);});
+
+// ── teacher editor ──
+var snapshot=null;
+wire("teacher-toggle",function(){
+  if($("teacher-view").style.display==="flex"){DATA=snapshot||DATA;showQuiz();}else{showTeacher();}
+});
+function showQuiz(){$("quiz-view").style.display="flex";$("teacher-view").style.display="none";}
+function showTeacher(){
+  snapshot=copyData(DATA);
+  $("quiz-view").style.display="none";$("teacher-view").style.display="flex";
+  renderEditor();
+}
+wire("tv-save",function(){saveData();snapshot=null;showQuiz();totalC=0;totalW=0;totalXP=0;startLevel(1);});
+wire("tv-cancel",function(){DATA=snapshot||DATA;snapshot=null;showQuiz();});
+var resetArmed=false;
+wire("tv-reset",function(){
+  var b=$("tv-reset");
+  if(!resetArmed){resetArmed=true;b.textContent="Tap again to restore";setTimeout(function(){resetArmed=false;b.textContent="Restore defaults";},3000);return;}
+  resetArmed=false;b.textContent="Restore defaults";
+  DATA=copyData(DEFAULT_DATA);renderEditor();
+});
+
+var TYPES=["gen","ped","ns","evo","adapt","term"];
+var TYPE_LABELS={gen:"Genetics",ped:"Pedigrees & karyotypes",ns:"Natural selection",evo:"Evolution",adapt:"Adaptations",term:"Terminology"};
+
+function renderEditor(){
+  var list=$("qlist");list.innerHTML="";
+  DATA.forEach(function(d,i){renderCard(d,i,list);});
+}
+
+function pillRow(label,values,labelFor,isActive,onPick){
+  var w=document.createElement("div");w.innerHTML='<div class="field-label">'+label+'</div>';
+  var row=document.createElement("div");row.className="pills";
+  values.forEach(function(v){
+    var p=document.createElement("div");p.className="pill"+(isActive(v)?" active":"");p.textContent=labelFor(v);
+    p.addEventListener("click",function(){onPick(v);row.querySelectorAll(".pill").forEach(function(x){x.classList.remove("active");});p.classList.add("active");});
+    row.appendChild(p);
+  });
+  w.appendChild(row);return w;
+}
+
+function renderCard(d,i,list){
+  var wrap=document.createElement("div");wrap.className="qcard";
+  var hdr=document.createElement("div");hdr.className="qcard-header";
+  hdr.innerHTML='<span class="qcard-num">Q'+(i+1)+'</span><span class="qcard-preview">'+escHtml(d.q)+'</span><span class="qcard-lv">Lv '+d.lv+'</span><button class="qcard-del">Delete</button>';
+  wrap.appendChild(hdr);
+  var body=document.createElement("div");body.className="qcard-body";
+
+  body.appendChild(pillRow("Level",[1,2,3,4,5,6],function(n){return "Level "+n;},function(n){return d.lv===n;},function(n){d.lv=n;hdr.querySelector(".qcard-lv").textContent="Lv "+n;}));
+  body.appendChild(pillRow("Type",TYPES,function(t){return TYPE_LABELS[t];},function(t){return d.t===t;},function(t){d.t=t;}));
+  body.appendChild(makeField("Question (or term, for terminology)",d.q,function(v){d.q=v;hdr.querySelector(".qcard-preview").textContent=v;}));
+  body.appendChild(makeField("Correct answer (or definition, for terminology)",d.a,function(v){d.a=v;}));
+
+  var ob=document.createElement("div");
+  ob.innerHTML='<div class="field-label" style="margin-bottom:6px">Wrong options (3)</div><div class="hint" style="margin-bottom:6px">Terminology cards ignore these: their wrong options come from the other terms.</div>';
+  var og=document.createElement("div");og.className="opts-grid";
+  for(var j=0;j<3;j++){(function(j){
+    var inp=document.createElement("input");inp.className="field-input";inp.type="text";inp.value=(d.x&&d.x[j])||"";
+    inp.setAttribute("aria-label","Wrong option "+(j+1));
+    inp.addEventListener("input",function(){if(!d.x)d.x=[];d.x[j]=inp.value;});
+    og.appendChild(inp);
+  })(j);}
+  ob.appendChild(og);body.appendChild(ob);
+  body.appendChild(makeTextarea("Explanation shown after answering",d.note||"",function(v){d.note=v;}));
+  wrap.appendChild(body);
+
+  hdr.addEventListener("click",function(e){if(e.target.classList.contains("qcard-del"))return;body.classList.toggle("open");});
+  var del=hdr.querySelector(".qcard-del"),armed=false;
+  del.addEventListener("click",function(e){
+    e.stopPropagation();
+    if(!armed){armed=true;del.textContent="Sure?";setTimeout(function(){armed=false;del.textContent="Delete";},3000);return;}
+    DATA.splice(i,1);renderEditor();
+  });
+  list.appendChild(wrap);
+}
+
+function makeField(label,val,onChange){
+  var w=document.createElement("div");
+  var l=document.createElement("div");l.className="field-label";l.textContent=label;
+  var inp=document.createElement("input");inp.className="field-input";inp.type="text";inp.value=val;
+  inp.addEventListener("input",function(){onChange(inp.value);});
+  w.appendChild(l);w.appendChild(inp);return w;
+}
+function makeTextarea(label,val,onChange){
+  var w=document.createElement("div");
+  var l=document.createElement("div");l.className="field-label";l.textContent=label;
+  var ta=document.createElement("textarea");ta.className="field-input";ta.value=val;ta.rows=3;
+  ta.addEventListener("input",function(){onChange(ta.value);});
+  w.appendChild(l);w.appendChild(ta);return w;
+}
+
+wire("add-btn",function(){
+  DATA.push({lv:currentLevel,t:"gen",q:"New question",a:"Correct answer",x:["Wrong 1","Wrong 2","Wrong 3"],note:""});
+  renderEditor();
+  var cards=document.querySelectorAll(".qcard-body");
+  if(cards.length)cards[cards.length-1].classList.add("open");
+  $("tv-scroll").scrollTop=999999;
+});
+
+function escHtml(s){return(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+
+startLevel(1);
+</script>
+</body>
+</html>
